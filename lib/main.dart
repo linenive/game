@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flame/game.dart';
+import 'game.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,6 +38,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  final MyGame myGame = MyGame();
 
   void _incrementCounter() {
     setState(() {
@@ -66,6 +69,10 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            const Text('Game'),
+            Expanded(
+              child: GameWidget(game: myGame),
+            ),
             const Text(
               'You have clicked the button this many times:',
             ),
