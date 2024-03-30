@@ -1,17 +1,45 @@
-name: Flutter Web
+name: Deploy Flutter Web App to GitHub Pages
+
 on:
   push:
     branches:
       - main
+
 jobs:
-  build:
-    name: Build Web
-    env:
-      my_secret: $
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: subosito/flutter-action@v1
-      - uses: bluefireteam/flutter-gh-pages@v7
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
         with:
-          baseHref: /game/
+          token: ${{ secrets.COMMIT_SECRET }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2.12.0
+        with:
+          flutter-version: "3.19.5"
+
+      - name: Build Web
+        run: |
+          git config --global user.email "linenive@github.com"
+          git config --global user.name "linenive"
+          git checkout -b deploy-gh-pages
+
+          flutter build web --release --base-href=/game/
+          mv ./build/web ./gh-pages
+
+          git add ./gh-pages
+          git commit -m 'deploy gh-pages'
+
+          git fetch origin gh-pages
+          if git show-ref --quiet refs/remotes/origin/gh-pages; then
+            git push origin --delete gh-pages
+          fi
+
+          git subtree push --prefix gh-pages origin gh-pages
+
+          git checkout main
+          git branch -D deploy-gh-pages
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.COMMIT_SECRET }}
