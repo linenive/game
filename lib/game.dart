@@ -43,6 +43,8 @@ class MyCircle extends PositionComponent with HasGameRef<MyGame> {
   late Color blueColor;
   late Color rainbowColor;
 
+  late Vector2 lastMousePosition = Vector2(0, 0);
+
   MyCircle(this.id, Vector2 position) {
     super.position = Vector2(0, 0);
 
@@ -93,14 +95,54 @@ class MyCircle extends PositionComponent with HasGameRef<MyGame> {
         rainbowCirclePosition.toOffset(), 15, Paint()..color = rainbowColor);
   }
 
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    homePosition.y += 20.0 * dt;
+    if (homePosition.y > gameRef.size.y) {
+      homePosition.y = 0;
+    }
+
+    blueCircleHomePosition.y += 24.0 * dt;
+    if (blueCircleHomePosition.y > gameRef.size.y) {
+      blueCircleHomePosition.y = 0;
+    }
+
+    amberCircleHomePosition.y += 30.0 * dt;
+    if (amberCircleHomePosition.y > gameRef.size.y) {
+      amberCircleHomePosition.y = 0;
+    }
+
+    rainbowCircleHomePosition.y += 40.0 * dt;
+    if (rainbowCircleHomePosition.y > gameRef.size.y) {
+      rainbowCircleHomePosition.y = 0;
+    }
+
+    updatePosition();
+  }
+
   void move(Vector2 targetPosition) {
-    Vector2 direction = (targetPosition - homePosition).normalized();
+    lastMousePosition = targetPosition;
+  }
+
+  void updatePosition() {
+    Vector2 direction = (lastMousePosition - homePosition).normalized();
     circlePosition = homePosition + direction * randomNoise.y * 2.0;
+
+    Vector2 blueDirection =
+        (lastMousePosition - blueCircleHomePosition).normalized();
     blueCirclePosition =
-        blueCircleHomePosition + direction * (randomNoise.x + 50.0);
+        blueCircleHomePosition + blueDirection * (randomNoise.x + 50.0);
+
+    Vector2 amberDirection =
+        (lastMousePosition - amberCircleHomePosition).normalized();
     amberCirclePosition =
-        amberCircleHomePosition + direction * (2 * randomNoise.x + 20.0);
-    rainbowCirclePosition = rainbowCircleHomePosition + direction * 40.0;
+        amberCircleHomePosition + amberDirection * (2 * randomNoise.x + 20.0);
+
+    Vector2 rainbowDirection =
+        (lastMousePosition - rainbowCircleHomePosition).normalized();
+    rainbowCirclePosition = rainbowCircleHomePosition + rainbowDirection * 40.0;
   }
 }
 
@@ -132,6 +174,16 @@ class MyGame extends FlameGame with MouseMovementDetector {
 
     for (final circle in circles) {
       circle.move(info.eventPosition.global);
+    }
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    // player.update(dt);
+
+    for (final circle in circles) {
+      circle.update(dt);
     }
   }
 
