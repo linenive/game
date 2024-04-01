@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
@@ -25,98 +27,129 @@ class Player extends SpriteComponent with HasGameRef<MyGame> {
   }
 }
 
+class CircleFactory {
+  static MyCircle createRedCircle(int index, Vector2 alignPosition) {
+    var homePosition =
+        Vector2(alignPosition.x + index * 100.0, alignPosition.y);
+    var randomNoise = Vector2.random() * 50;
+    homePosition += randomNoise;
+    var color = Colors.red.withOpacity(1 - index / 10);
+    Vector2 interactionPosition(
+        Vector2 homePosition, Vector2 lastMousePosition, double randomNoise) {
+      Vector2 direction = (lastMousePosition - homePosition).normalized();
+
+      double followDistance = randomNoise * 2.0;
+      var distance = (lastMousePosition - homePosition).length;
+      if (distance < followDistance) {
+        return lastMousePosition;
+      } else {
+        return homePosition + direction * followDistance;
+      }
+    }
+
+    return MyCircle(index, homePosition, color, 20.0, interactionPosition);
+  }
+
+  static MyCircle createBlueCircle(int index, Vector2 alignPosition) {
+    var homePosition =
+        Vector2(alignPosition.x + index * 100.0, alignPosition.y);
+    var randomNoise = Vector2.random() * 50;
+    homePosition += randomNoise;
+    var color = Colors.blue.withOpacity(1 - index / 10);
+    Vector2 interactionPosition(
+        Vector2 homePosition, Vector2 lastMousePosition, double randomNoise) {
+      Vector2 direction = (lastMousePosition - homePosition).normalized();
+
+      double followDistance = randomNoise + 50.0;
+      var distance = (lastMousePosition - homePosition).length;
+      if (distance < followDistance) {
+        return lastMousePosition;
+      } else {
+        return homePosition + direction * followDistance;
+      }
+    }
+
+    return MyCircle(index, homePosition, color, 24.0, interactionPosition);
+  }
+
+  static MyCircle createAmberCircle(int index, Vector2 alignPosition) {
+    var homePosition =
+        Vector2(alignPosition.x + index * 100.0, alignPosition.y);
+    var randomNoise = Vector2.random() * 100;
+    homePosition += randomNoise;
+    var color = Colors.amber.withOpacity(index / 10);
+    Vector2 interactionPosition(
+        Vector2 homePosition, Vector2 lastMousePosition, double randomNoise) {
+      Vector2 direction = (lastMousePosition - homePosition).normalized();
+
+      double followDistance = 2 * randomNoise + 20.0;
+      var distance = (lastMousePosition - homePosition).length;
+      if (distance < followDistance) {
+        return lastMousePosition;
+      } else {
+        return homePosition + direction * followDistance;
+      }
+    }
+
+    return MyCircle(index, homePosition, color, 30.0, interactionPosition);
+  }
+
+  static MyCircle createRainbowCircle(int index, Vector2 alignPosition) {
+    var homePosition =
+        Vector2(alignPosition.x + index * 100.0, alignPosition.y);
+    var randomNoise = Vector2.random() * 50;
+    homePosition += randomNoise;
+    var color = Colors.white.withRed(255 - index * 25).withGreen(index * 25);
+    Vector2 interactionPosition(
+        Vector2 homePosition, Vector2 lastMousePosition, double randomNoise) {
+      Vector2 direction = (lastMousePosition - homePosition).normalized();
+
+      double followDistance = 40.0;
+      var distance = (lastMousePosition - homePosition).length;
+      if (distance < followDistance) {
+        return lastMousePosition;
+      } else {
+        return homePosition + direction * followDistance;
+      }
+    }
+
+    return MyCircle(index, homePosition, color, 40.0, interactionPosition);
+  }
+}
+
 class MyCircle extends PositionComponent with HasGameRef<MyGame> {
   int id;
-  late Vector2 circlePosition;
-  late Vector2 blueCirclePosition;
-  late Vector2 amberCirclePosition;
-  late Vector2 rainbowCirclePosition;
-
+  late Vector2 adjustedPosition;
   late Vector2 homePosition;
-  late Vector2 blueCircleHomePosition;
-  late Vector2 amberCircleHomePosition;
-  late Vector2 rainbowCircleHomePosition;
-
-  late Vector2 randomNoise;
-
   late Color color;
-  late Color blueColor;
-  late Color rainbowColor;
-
   late Vector2 lastMousePosition = Vector2(0, 0);
+  double dropSpeed;
+  Vector2 Function(Vector2, Vector2, double) interactionPosition;
+  double randomNoise = Random().nextDouble() * 100.0;
 
-  MyCircle(this.id, Vector2 position) {
-    super.position = Vector2(0, 0);
-
-    randomNoise = Vector2.random() * 50;
-    homePosition = Vector2(position.x, position.y) + randomNoise;
-
-    var blueRandomNoise = Vector2.random() * 50;
-    blueCircleHomePosition =
-        Vector2(position.x, position.y + 100) + blueRandomNoise;
-
-    var amberRandomNoise = Vector2.random() * 100;
-    amberCircleHomePosition =
-        Vector2(position.x, position.y + amberRandomNoise.y + 200) +
-            amberRandomNoise;
-
-    var rainbowRandomNoise = Vector2.random() * 50;
-    rainbowCircleHomePosition =
-        Vector2(position.x, position.y + 400) + rainbowRandomNoise;
-
-    circlePosition = Vector2(homePosition.x, homePosition.y);
-    blueCirclePosition =
-        Vector2(blueCircleHomePosition.x, blueCircleHomePosition.y);
-    amberCirclePosition =
-        Vector2(amberCircleHomePosition.x, amberCircleHomePosition.y);
-    rainbowCirclePosition =
-        Vector2(rainbowCircleHomePosition.x, rainbowCircleHomePosition.y);
-
-    color = Colors.red;
-    color = color.withOpacity(1 - id / 10);
-
-    blueColor = Colors.blue;
-    blueColor = blueColor.withOpacity(1 - id / 10);
-
-    rainbowColor = Colors.white;
-    rainbowColor = rainbowColor.withRed(255 - id * 25);
-    rainbowColor = rainbowColor.withGreen(id * 25);
+  MyCircle(this.id, this.homePosition, this.color, this.dropSpeed,
+      this.interactionPosition)
+      : super(
+          position: Vector2(0, 0),
+          size: Vector2(40, 40),
+          anchor: Anchor.center,
+        ) {
+    adjustedPosition = Vector2(homePosition.x, homePosition.y);
   }
 
   @override
   void render(Canvas canvas) {
     super.render(canvas);
-    canvas.drawCircle(circlePosition.toOffset(), 20, Paint()..color = color);
-    canvas.drawCircle(
-        blueCirclePosition.toOffset(), 10, Paint()..color = blueColor);
-    canvas.drawCircle(
-        amberCirclePosition.toOffset(), 12, Paint()..color = Colors.amber);
-    canvas.drawCircle(
-        rainbowCirclePosition.toOffset(), 15, Paint()..color = rainbowColor);
+    canvas.drawCircle(adjustedPosition.toOffset(), 20, Paint()..color = color);
   }
 
   @override
   void update(double dt) {
     super.update(dt);
 
-    homePosition.y += 20.0 * dt;
+    homePosition.y += dropSpeed * dt;
     if (homePosition.y > gameRef.size.y) {
       homePosition.y = 0;
-    }
-
-    blueCircleHomePosition.y += 24.0 * dt;
-    if (blueCircleHomePosition.y > gameRef.size.y) {
-      blueCircleHomePosition.y = 0;
-    }
-
-    amberCircleHomePosition.y += 30.0 * dt;
-    if (amberCircleHomePosition.y > gameRef.size.y) {
-      amberCircleHomePosition.y = 0;
-    }
-
-    rainbowCircleHomePosition.y += 40.0 * dt;
-    if (rainbowCircleHomePosition.y > gameRef.size.y) {
-      rainbowCircleHomePosition.y = 0;
     }
 
     updatePosition();
@@ -127,22 +160,8 @@ class MyCircle extends PositionComponent with HasGameRef<MyGame> {
   }
 
   void updatePosition() {
-    Vector2 direction = (lastMousePosition - homePosition).normalized();
-    circlePosition = homePosition + direction * randomNoise.y * 2.0;
-
-    Vector2 blueDirection =
-        (lastMousePosition - blueCircleHomePosition).normalized();
-    blueCirclePosition =
-        blueCircleHomePosition + blueDirection * (randomNoise.x + 50.0);
-
-    Vector2 amberDirection =
-        (lastMousePosition - amberCircleHomePosition).normalized();
-    amberCirclePosition =
-        amberCircleHomePosition + amberDirection * (2 * randomNoise.x + 20.0);
-
-    Vector2 rainbowDirection =
-        (lastMousePosition - rainbowCircleHomePosition).normalized();
-    rainbowCirclePosition = rainbowCircleHomePosition + rainbowDirection * 40.0;
+    adjustedPosition =
+        interactionPosition(homePosition, lastMousePosition, randomNoise);
   }
 }
 
@@ -152,7 +171,10 @@ class MyGame extends FlameGame with MouseMovementDetector {
 
   void makeCircles() {
     for (int i = 0; i < 10; i++) {
-      circles.add(MyCircle(i, Vector2(10.0 + i * 100.0, 10.0)));
+      circles.add(CircleFactory.createRedCircle(i, Vector2(10.0, 10.0)));
+      circles.add(CircleFactory.createBlueCircle(i, Vector2(10.0, 110.0)));
+      circles.add(CircleFactory.createAmberCircle(i, Vector2(10.0, 210.0)));
+      circles.add(CircleFactory.createRainbowCircle(i, Vector2(10.0, 410.0)));
     }
   }
 
